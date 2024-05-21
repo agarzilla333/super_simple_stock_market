@@ -1,7 +1,10 @@
-from datetime import timedelta
-from statistics import geometric_mean
-from typing import Union
+'''
+This module handles all 5 of the basic stock calculations
+'''
 
+from datetime import timedelta
+from typing import Union
+from scipy.stats import gmean
 from pandas import Timestamp
 from numpy.typing import NDArray
 import pandas as pd
@@ -45,8 +48,8 @@ class StocksData:
             'price': []
         })
 
-    def record_trade(self, timestamp: Timestamp, stock: str, quantity: int, indicator: str, price: float) \
-            -> Union[None, str]:
+    def record_trade(self, timestamp: Timestamp, stock: str, quantity: int,
+                     indicator: str, price: float) -> Union[None, str]:
         '''
             This function records stock transactions.
         :param timestamp:
@@ -64,7 +67,9 @@ class StocksData:
                 'indicator': [indicator],
                 'price': [price]
             })
-            StocksData.stock_transactions = pd.concat([StocksData.stock_transactions, new_record], ignore_index=True)
+            cleaned_transactions = StocksData.stock_transactions.dropna(axis=1, how='all')
+            StocksData.stock_transactions = pd.concat([cleaned_transactions, new_record],
+                                                      ignore_index=True)
         except TypeError:
             return f'Invalid input data types ' \
                    f'timestamp type: {type(timestamp)} expected: {Timestamp}' \
@@ -121,10 +126,10 @@ class SuperSimpleStockMarket:
             last_dividend = stock_info['last_dividend']
             fixed_dividend = stock_info['fixed_dividend']
             par_value = stock_info['par_value']
-            if (stock_info['type'].astype('string') == 'Common').bool():
+            if (stock_info['type'].astype('string') == 'Common').any():
                 dividend_yield = np.round((last_dividend / price).iloc[0], decimals=2)
             else:
-                dividend_yield = np.nan if np.isnan(fixed_dividend).bool() else \
+                dividend_yield = np.nan if np.isnan(fixed_dividend).any() else \
                     np.round(((fixed_dividend * par_value) / price).iloc[0], decimals=2)
 
             return dividend_yield
@@ -148,7 +153,8 @@ class SuperSimpleStockMarket:
                 return f'The stock={stock} is not currently in the stock dividend dataset.'
             stock_info = stocks_data.stock_dividend_data[stocks == f'{stock}']
             dividend = stock_info['last_dividend']
-            pe = np.nan if np.isnan(dividend).bool() else np.round((price / dividend).iloc[0], decimals=2)
+            pe = np.nan if np.isnan(dividend).any() else \
+                np.round((price / dividend).iloc[0], decimals=2)
             return pe
         except TypeError:
             return f'Invalid input data types stock type {type(stock)} expected {str}, ' \
@@ -157,7 +163,8 @@ class SuperSimpleStockMarket:
             return f'An error occured while processing stock: {stock}: {str(e)}'
 
 
-    def calculate_volume_weighted_stock_price(self, stock: str, minutes: int=15) -> Union[float, str]:
+    def calculate_volume_weighted_stock_price(self, stock: str,
+                                              minutes: int=15) -> Union[float, str]:
         '''
             This method calculates the vwap for a stock at some specified time interval
         :param stock:
@@ -168,19 +175,20 @@ class SuperSimpleStockMarket:
             stocks_data = StocksData()
             if not self._check_stock(stock, 'transactions'):
                 return f'The stock={stock} is not currently in the stock transactions dataset.'
-            now = pd.Timestamp.now().tz_localize('UTC')
+            now = pd.Timestamp.now()
             time_range = now - timedelta(minutes=minutes)
 
             current_stock_data = stocks_data.stock_transactions[
                 (stocks_data.stock_transactions['stock'] == stock) &
-                (stocks_data.stock_transactions['timestamp'] >= time_range)
-            ]
+                (stocks_data.stock_transactions['timestamp'] >= time_range)].copy()
 
-            current_stock_data['price_volume'] = current_stock_data['price'] * current_stock_data['quantity']
+            current_stock_data['price_volume'] = \
+                current_stock_data['price'] * current_stock_data['quantity']
             total_price_volume = current_stock_data['price_volume'].sum()
             total_quantity = current_stock_data['quantity'].sum()
 
-            return np.round(total_price_volume / total_quantity, decimals=2) if total_quantity > 0 else np.nan
+            return np.round(total_price_volume / total_quantity, decimals=2) \
+                if total_quantity > 0 else np.nan
         except TypeError:
             return f'Invalid input data types stock type {type(stock)} expected {str}, ' \
                    f'minutes type {type(minutes)} expected {int}'
@@ -189,18 +197,19 @@ class SuperSimpleStockMarket:
 
     def calculate_geometric_mean(self) -> Union[float, str]:
         '''
-            This method calculates the geometric mean for all stocks based off of last transaction price
+            This method calculates the geometric mean for all
+            stocks based off of last transaction price
         :return:
         '''
         try:
             stocks_data = StocksData()
-            last_transactions = stocks_data.stock_transactions.groupby('stock').last().reset_index()
+            last_transactions = stocks_data.stock_transactions.\
+                groupby('stock').last().reset_index()
             last_prices = last_transactions['price']
-            return np.round(geometric_mean(last_prices), decimals=2) if len(last_prices) > 0 else np.nan
+            return np.round(gmean(last_prices), decimals=2) \
+                if len(last_prices) > 0 else np.nan
         except Exception as e:
             return f'The following error occured while calculating the geometric mean: {str(e)}.'
-
-
 
 if __name__ == '__main__':
     sm = SuperSimpleStockMarket()
