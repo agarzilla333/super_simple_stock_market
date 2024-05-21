@@ -55,5 +55,17 @@ def test_calculate_volume_weighted_stock_price():
            'The stock=AAPL is not currently in the stock transactions dataset.'
     assert np.isnan(simple_market.calculate_volume_weighted_stock_price('MSFT'))
 
+def test_calculate_geometric_mean():
+    time_now = pd.Timestamp.now().tz_localize('UTC')
+    stocks_data = super_simple_stock_market.StocksData()
+    simple_market = super_simple_stock_market.SuperSimpleStockMarket()
+    stocks = ['AMZN', 'NVDA','BRK.B','META','UNH','XOM','LLY','JPM','JNJ','V']
+    prices = [182.69, 948.33, 414.47, 464.82, 522.28, 118.40, 804.01, 198.05, 151.11, 275.16]
+    side = ['BUY', 'BUY', 'SELL', 'BUY', 'SELL', 'BUY', 'SELL', 'BUY', 'BUY', 'BUY']
+    for i in range(10):
+        stocks_data.record_trade(time_now, stocks[i], 100, side[i], prices[i])
+    assert simple_market.calculate_geometric_mean() == 326.26
+
+
 
 
