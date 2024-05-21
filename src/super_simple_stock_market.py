@@ -1,95 +1,25 @@
 '''
-This module handles all 5 of the basic stock calculations
+This module has class SuperSimpleStockMarket which handles the basic stock calculations
 '''
 
 from datetime import timedelta
 from typing import Union
 from scipy.stats import gmean
-from pandas import Timestamp
 from numpy.typing import NDArray
+from .stocks_data import StocksData
 import pandas as pd
 import numpy as np
 
 
-class StocksData:
-    '''
-        This class holds the data for the static stock dividend data frame
-        and the stock transactions data frame
-    '''
-    _instance = None
-    def __new__(cls):
-        '''
-            This method on the python data model ensures we initialize the dataframes only once,
-            effectively creating a singleton.
-        '''
-        if cls._instance is None:
-            cls._instance = super(StocksData, cls).__new__(cls)
-            cls._initialize_data()
-        return cls._instance
-
-    @staticmethod
-    def _initialize_data():
-        '''
-            This private function initializes stock dividend and stock transactions data.
-        :return:
-        '''
-        StocksData.stock_dividend_data = pd.DataFrame({
-            'stock': ['TEA', 'POP', 'ALE', 'GIN', 'JOE'],
-            'type': ['Common', 'Common', 'Common', 'Preferred', 'Common'],
-            'last_dividend': [0, 8, 23, 8, 12],
-            'fixed_dividend': [np.nan, np.nan, np.nan, .02, np.nan],
-            'par_value': [100, 100, 60, 100, 250]
-        })
-        StocksData.stock_transactions = pd.DataFrame({
-            'timestamp': [],
-            'stock': [],
-            'quantity': [],
-            'indicator': [],
-            'price': []
-        })
-
-    def record_trade(self, timestamp: Timestamp, stock: str, quantity: int,
-                     indicator: str, price: float) -> Union[None, str]:
-        '''
-            This function records stock transactions.
-        :param timestamp:
-        :param stock:
-        :param quantity:
-        :param indicator:
-        :param price:
-        :return:
-        '''
-        try:
-            new_record = pd.DataFrame({
-                'timestamp': [timestamp],
-                'stock': [stock],
-                'quantity': [quantity],
-                'indicator': [indicator],
-                'price': [price]
-            })
-            cleaned_transactions = StocksData.stock_transactions.dropna(axis=1, how='all')
-            StocksData.stock_transactions = pd.concat([cleaned_transactions, new_record],
-                                                      ignore_index=True)
-        except TypeError:
-            return f'Invalid input data types ' \
-                   f'timestamp type: {type(timestamp)} expected: {Timestamp}' \
-                   f'stock type: {type(stock)} expected: {str}' \
-                   f'price type: {type(price)} expected: {float}' \
-                   f'quantity type: {type(quantity)} expected {int}' \
-                   f'indicator type: {type(indicator)} expected {str}'
-        except Exception as e:
-            return f'An error occured while processing stock: {stock}: {str(e)}'
-
-
-
 class SuperSimpleStockMarket:
     '''
-        This class the simple methods for the super simple stock market
+    This class has simple methods for calculating metrics
+    related to the super simple stock market
     '''
 
     def _check_stock(self, stock: str, dataset: str='stock_dividend_data') -> bool:
         '''
-            Helper method to determine if stock is in dataset
+        Helper method to determine if stock is in dataset
         :param stock:
         :param dataset:
         :return:
@@ -102,7 +32,7 @@ class SuperSimpleStockMarket:
 
     def get_stocks(self, dataset: str='stock_dividend_data') -> NDArray[str]:
         '''
-            Helper method to return stocks in a given dataset
+        Helper method to return stocks in a given dataset
         :param dataset:
         :return:
         '''
@@ -111,7 +41,7 @@ class SuperSimpleStockMarket:
 
     def calculate_dividend_yield(self, stock: str, price: float) -> Union[float, str]:
         '''
-            This method calculates the dividend yield given a stock and price
+        This method calculates the dividend yield given a stock and price
         :param stock:
         :param price:
         :return:
@@ -141,7 +71,7 @@ class SuperSimpleStockMarket:
 
     def calculate_pe_ratio(self, stock: str, price: float) -> Union[float, str]:
         '''
-            This function calculates the pe ratio given a stock and price
+        This function calculates the pe ratio given a stock and price
         :param stock:
         :param price:
         :return:
@@ -166,7 +96,7 @@ class SuperSimpleStockMarket:
     def calculate_volume_weighted_stock_price(self, stock: str,
                                               minutes: int=15) -> Union[float, str]:
         '''
-            This method calculates the vwap for a stock at some specified time interval
+        This method calculates the vwap for a stock at some specified time interval
         :param stock:
         :param minutes:
         :return:
@@ -197,8 +127,8 @@ class SuperSimpleStockMarket:
 
     def calculate_geometric_mean(self) -> Union[float, str]:
         '''
-            This method calculates the geometric mean for all
-            stocks based off of last transaction price
+        This method calculates the geometric mean for all stocks
+        based off of last transaction price
         :return:
         '''
         try:
