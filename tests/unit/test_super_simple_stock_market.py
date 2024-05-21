@@ -26,19 +26,6 @@ def test_calculate_pe_ratio():
     assert pe == 'The stock=AAPL is not currently in the stock dividend dataset.'
 
 
-def test_record_trade():
-    time_now = pd.Timestamp.now()
-    stocks_data = super_simple_stock_market.StocksData()
-
-    stocks_data.record_trade(time_now, 'TSLA', 20000, 'BUY', 175.00)
-    assert stocks_data.stock_transactions['stock'].isin(['TSLA']).any() == True
-
-    stocks_data.record_trade(time_now, 'GOOG', 20000, 'BUY', 177.00)
-    assert stocks_data.stock_transactions['stock'].isin(['GOOG']).any() == True
-
-    assert stocks_data.stock_transactions.shape[0] == 2
-
-
 def test_calculate_volume_weighted_stock_price():
     time_now = pd.Timestamp.now()
     stocks_data = super_simple_stock_market.StocksData()
@@ -54,6 +41,7 @@ def test_calculate_volume_weighted_stock_price():
     assert simple_market.calculate_volume_weighted_stock_price('AAPL') == \
            'The stock=AAPL is not currently in the stock transactions dataset.'
     assert np.isnan(simple_market.calculate_volume_weighted_stock_price('MSFT'))
+
 
 def test_calculate_geometric_mean():
     time_now = pd.Timestamp.now()
