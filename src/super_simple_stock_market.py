@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 import pandas as pd
 import numpy as np
 
-class StockData:
+class StocksData:
     '''
         This class holds the data for the static stock dividend data frame
         and the stock transactions data frame
@@ -13,7 +15,7 @@ class StockData:
             effectively creating a singleton.
         '''
         if cls._instance is None:
-            cls._instance = super(StockData, cls).__new__(cls)
+            cls._instance = super(StocksData, cls).__new__(cls)
             cls._initialize_data()
         return cls._instance
 
@@ -23,14 +25,14 @@ class StockData:
             This private function initializes stock dividend and stock transactions data.
         :return:
         '''
-        StockData.stock_dividend_data = pd.DataFrame({
+        StocksData.stock_dividend_data = pd.DataFrame({
             'stock': ['TEA', 'POP', 'ALE', 'GIN', 'JOE'],
             'type': ['Common', 'Common', 'Common', 'Preferred', 'Common'],
             'last_dividend': [0, 8, 23, 8, 12],
             'fixed_dividend': [np.nan, np.nan, np.nan, .02, np.nan],
             'par_value': [100, 100, 60, 100, 250]
         })
-        StockData.stock_transactions = pd.DataFrame({
+        StocksData.stock_transactions = pd.DataFrame({
             'timestamp': [],
             'stock': [],
             'quantity': [],
@@ -55,16 +57,35 @@ class StockData:
             'indicator': [indicator],
             'price': [price]
         })
-        StockData.stock_transactions = pd.concat([StockData.stock_transactions, new_record], ignore_index=True)
+        StocksData.stock_transactions = pd.concat([StocksData.stock_transactions, new_record], ignore_index=True)
 
 
 class SuperSimpleStockMarket:
     '''
-        This class has the 5 functions for the super simple stock market
+        This class the simple methods for the super simple stock market
     '''
-    def _check_stock(self, stock):
-        stocks = StockData().stock_dividend_data['stock']
+
+    def _check_stock(self, stock, dataset='stock_dividend_data'):
+        '''
+            Helper method to determine if stock is in dataset
+        :param stock:
+        :param dataset:
+        :return:
+        '''
+        if dataset == 'stock_dividend_data':
+            stocks = StocksData().stock_dividend_data['stock']
+        else:
+            stocks = StocksData().stock_transactions['stock']
         return True if stocks.isin([f'{stock}']).any() else False
+
+    def get_stocks(self, dataset='stock_dividend_data'):
+        '''
+            Helper method to return stocks in a given dataset
+        :param dataset:
+        :return:
+        '''
+        return StocksData().stock_dividend_data['stock'] if dataset == 'stock_dividend_data' \
+            else StocksData().stock_transactions['stock']
 
     def calculate_dividend_yield(self, stock, price):
         '''
@@ -73,10 +94,10 @@ class SuperSimpleStockMarket:
         :param price:
         :return:
         '''
-        stock_data = StockData()
-        stocks = stock_data.stock_dividend_data['stock']
+        stocks_data = StocksData()
+        stocks = self.get_stocks()
         if self._check_stock(stock):
-            stock_info = stock_data.stock_dividend_data[stocks == f'{stock}']
+            stock_info = stocks_data.stock_dividend_data[stocks == f'{stock}']
         else:
             return f'The stock={stock} is not currently in the stock dividend dataset.'
 
@@ -97,10 +118,10 @@ class SuperSimpleStockMarket:
         :param price:
         :return:
         '''
-        stock_data = StockData()
-        stocks = stock_data.stock_dividend_data['stock']
+        stocks_data = StocksData()
+        stocks = self.get_stocks()
         if self._check_stock(stock):
-            stock_info = stock_data.stock_dividend_data[stocks == f'{stock}']
+            stock_info = stocks_data.stock_dividend_data[stocks == f'{stock}']
         else:
             return f'The stock={stock} is not currently in the stock dividend dataset.'
 
@@ -108,6 +129,23 @@ class SuperSimpleStockMarket:
         pe = np.nan if np.isnan(dividend).bool() else np.round((price / dividend).iloc[0], decimals=2)
         return pe
 
+    def calculate_volume_weighted_stock_price(self, stock, minutes=15):
+        stocks_data = StocksData()
+        if not self._check_stock(stock, 'transactions'):
+            return f'The stock={stock} is not currently in the stock transactions dataset.'
+        now = pd.Timestamp.now().tz_localize('UTC')
+        time_range = now - timedelta(minutes=minutes)
+
+        current_stock_data = stocks_data.stock_transactions[
+            (stocks_data.stock_transactions['stock'] == stock) &
+            (stocks_data.stock_transactions['timestamp'] >= time_range)
+        ]
+
+        current_stock_data['price_volume'] = current_stock_data['price'] * current_stock_data['quantity']
+        total_price_volume = current_stock_data['price_volume'].sum()
+        total_quantity = current_stock_data['quantity'].sum()
+
+        return np.round(total_price_volume / total_quantity, decimals=2) if total_quantity > 0 else np.nan
 
 
 

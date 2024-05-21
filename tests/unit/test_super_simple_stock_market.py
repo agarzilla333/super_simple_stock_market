@@ -1,5 +1,6 @@
 from src import super_simple_stock_market
 import pandas as pd
+import numpy as np
 
 def test_calculate_dividend_yield():
     sm = super_simple_stock_market.SuperSimpleStockMarket()
@@ -27,12 +28,32 @@ def test_calculate_pe_ratio():
 
 def test_record_trade():
     time_now = pd.Timestamp.now().tz_localize('UTC')
-    stock_data = super_simple_stock_market.StockData()
+    stocks_data = super_simple_stock_market.StocksData()
 
-    stock_data.record_trade(time_now, 'TSLA', 20000, 'BUY', 175.00)
-    assert stock_data.stock_transactions['stock'].isin(['TSLA']).any() == True
+    stocks_data.record_trade(time_now, 'TSLA', 20000, 'BUY', 175.00)
+    assert stocks_data.stock_transactions['stock'].isin(['TSLA']).any() == True
 
-    stock_data.record_trade(time_now, 'GOOG', 20000, 'BUY', 177.00)
-    assert stock_data.stock_transactions['stock'].isin(['GOOG']).any() == True
+    stocks_data.record_trade(time_now, 'GOOG', 20000, 'BUY', 177.00)
+    assert stocks_data.stock_transactions['stock'].isin(['GOOG']).any() == True
 
-    assert stock_data.stock_transactions.shape[0] == 2
+    assert stocks_data.stock_transactions.shape[0] == 2
+
+
+def test_calculate_volume_weighted_stock_price():
+    time_now = pd.Timestamp.now().tz_localize('UTC')
+    stocks_data = super_simple_stock_market.StocksData()
+    simple_market = super_simple_stock_market.SuperSimpleStockMarket()
+    for i in range(0, 1000, 100):
+        price = 170 + (i%3)
+        shares = i
+        stocks_data.record_trade(time_now, 'GE', shares, 'BUY', price)
+
+    stocks_data.record_trade(time_now, 'MSFT', 0, 'BUY', 177.50)
+
+    assert simple_market.calculate_volume_weighted_stock_price('GE') == 170.93
+    assert simple_market.calculate_volume_weighted_stock_price('AAPL') == \
+           'The stock=AAPL is not currently in the stock transactions dataset.'
+    assert np.isnan(simple_market.calculate_volume_weighted_stock_price('MSFT'))
+
+
+
