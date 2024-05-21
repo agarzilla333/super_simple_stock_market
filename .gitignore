@@ -1,0 +1,8 @@
+.idea
+venv
+.DS_Store
+__pycache__
+.ipynb_checkpoints
+scratch_pad.py
+.aws-sam/
+.env
