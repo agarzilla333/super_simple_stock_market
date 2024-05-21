@@ -1,4 +1,5 @@
 from src import super_simple_stock_market
+import pandas as pd
 
 def test_calculate_dividend_yield():
     sm = super_simple_stock_market.SuperSimpleStockMarket()
@@ -22,3 +23,16 @@ def test_calculate_pe_ratio():
 
     pe = sm.calculate_pe_ratio('AAPL', 500)
     assert pe == 'The stock=AAPL is not currently in the stock dividend dataset.'
+
+
+def test_record_trade():
+    time_now = pd.Timestamp.now().tz_localize('UTC')
+    stock_data = super_simple_stock_market.StockData()
+
+    stock_data.record_trade(time_now, 'TSLA', 20000, 'BUY', 175.00)
+    assert stock_data.stock_transactions['stock'].isin(['TSLA']).any() == True
+
+    stock_data.record_trade(time_now, 'GOOG', 20000, 'BUY', 177.00)
+    assert stock_data.stock_transactions['stock'].isin(['GOOG']).any() == True
+
+    assert stock_data.stock_transactions.shape[0] == 2
