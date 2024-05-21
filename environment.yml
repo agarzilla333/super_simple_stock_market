@@ -1,0 +1,8 @@
+name: super_simple_stock_market_env
+dependencies:
+  - numpy
+  - pandas
+  - scipy
+  - pip:
+    - pylint
+    - pytest
