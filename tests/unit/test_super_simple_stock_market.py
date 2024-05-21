@@ -27,7 +27,7 @@ def test_calculate_pe_ratio():
 
 
 def test_record_trade():
-    time_now = pd.Timestamp.now().tz_localize('UTC')
+    time_now = pd.Timestamp.now()
     stocks_data = super_simple_stock_market.StocksData()
 
     stocks_data.record_trade(time_now, 'TSLA', 20000, 'BUY', 175.00)
@@ -40,7 +40,7 @@ def test_record_trade():
 
 
 def test_calculate_volume_weighted_stock_price():
-    time_now = pd.Timestamp.now().tz_localize('UTC')
+    time_now = pd.Timestamp.now()
     stocks_data = super_simple_stock_market.StocksData()
     simple_market = super_simple_stock_market.SuperSimpleStockMarket()
     for i in range(0, 1000, 100):
@@ -56,8 +56,9 @@ def test_calculate_volume_weighted_stock_price():
     assert np.isnan(simple_market.calculate_volume_weighted_stock_price('MSFT'))
 
 def test_calculate_geometric_mean():
-    time_now = pd.Timestamp.now().tz_localize('UTC')
+    time_now = pd.Timestamp.now()
     stocks_data = super_simple_stock_market.StocksData()
+    stocks_data._initialize_data()
     simple_market = super_simple_stock_market.SuperSimpleStockMarket()
     stocks = ['AMZN', 'NVDA','BRK.B','META','UNH','XOM','LLY','JPM','JNJ','V']
     prices = [182.69, 948.33, 414.47, 464.82, 522.28, 118.40, 804.01, 198.05, 151.11, 275.16]
