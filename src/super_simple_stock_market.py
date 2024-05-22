@@ -6,7 +6,8 @@ from datetime import timedelta
 from typing import Union
 from scipy.stats import gmean
 from numpy.typing import NDArray
-from .stocks_data import StocksData
+from src.stocks_data import StocksData
+from src.utils.logger import error_logger
 import pandas as pd
 import numpy as np
 
@@ -61,13 +62,18 @@ class SuperSimpleStockMarket:
             else:
                 dividend_yield = np.nan if np.isnan(fixed_dividend).any() else \
                     np.round(((fixed_dividend * par_value) / price).iloc[0], decimals=2)
-
-            return dividend_yield
         except TypeError:
-            return f'Invalid input data types stock type {type(stock)} expected {str}, ' \
-                   f'price type {type(price)} expected {float}'
+            error_logger.log(level=4, msg=f'Invalid input data types stock type '
+                                         f'{type(stock)} expected {str}, '
+                                         f'price type {type(price)} expected {float}')
+            raise TypeError(f'Invalid input data types stock type {type(stock)} '
+                            f'expected {str}, price type {type(price)} expected {float}')
         except Exception as e:
-            return f'An error occured while processing stock: {stock}: {str(e)}'
+            error_logger.log(level=4, msg=f'An error occured while '
+                                         f'processing stock: {stock}: {str(e)}')
+            raise Exception(f'An error occured while processing stock: {stock}: {str(e)}')
+
+        return dividend_yield
 
     def calculate_pe_ratio(self, stock: str, price: float) -> Union[float, str]:
         '''
@@ -85,12 +91,18 @@ class SuperSimpleStockMarket:
             dividend = stock_info['last_dividend']
             pe = np.nan if np.isnan(dividend).any() else \
                 np.round((price / dividend).iloc[0], decimals=2)
-            return pe
         except TypeError:
-            return f'Invalid input data types stock type {type(stock)} expected {str}, ' \
-                   f'price type {type(price)} expected {float}'
+            error_logger.log(level=4, msg=f'Invalid input data types stock type '
+                                         f'{type(stock)} expected {str}, '
+                                         f'price type {type(price)} expected {float}')
+            raise TypeError(f'Invalid input data types stock type {type(stock)} expected {str}, '
+                            f'price type {type(price)} expected {float}')
         except Exception as e:
-            return f'An error occured while processing stock: {stock}: {str(e)}'
+            error_logger.log(level=4, msg=f'An error occured while processing '
+                                         f'stock: {stock}: {str(e)}')
+            raise Exception(f'An error occured while processing stock: {stock}: {str(e)}')
+
+        return pe
 
 
     def calculate_volume_weighted_stock_price(self, stock: str,
@@ -116,14 +128,21 @@ class SuperSimpleStockMarket:
                 current_stock_data['price'] * current_stock_data['quantity']
             total_price_volume = current_stock_data['price_volume'].sum()
             total_quantity = current_stock_data['quantity'].sum()
-
-            return np.round(total_price_volume / total_quantity, decimals=2) \
+            vwap = np.round(total_price_volume / total_quantity, decimals=2) \
                 if total_quantity > 0 else np.nan
+
         except TypeError:
-            return f'Invalid input data types stock type {type(stock)} expected {str}, ' \
-                   f'minutes type {type(minutes)} expected {int}'
+            error_logger.log(level=4, msg=f'Invalid input data types stock type '
+                                     f'{type(stock)} expected {str}, minutes type '
+                                     f'{type(minutes)} expected {int}')
+            raise TypeError(f'Invalid input data types stock type {type(stock)} expected {str}, '
+                            f'minutes type {type(minutes)} expected {int}')
         except Exception as e:
-            return f'An error occured while processing stock: {stock}: {str(e)}'
+            error_logger.log(level=4, msg=f'An error occured while processing stock: '
+                                         f'{stock}: {str(e)}')
+            raise Exception(f'An error occured while processing stock: {stock}: {str(e)}')
+
+        return vwap
 
     def calculate_geometric_mean(self) -> Union[float, str]:
         '''
@@ -136,10 +155,14 @@ class SuperSimpleStockMarket:
             last_transactions = stocks_data.stock_transactions.\
                 groupby('stock').last().reset_index()
             last_prices = last_transactions['price']
-            return np.round(gmean(last_prices), decimals=2) \
+            geo_mean = np.round(gmean(last_prices), decimals=2) \
                 if len(last_prices) > 0 else np.nan
         except Exception as e:
-            return f'The following error occured while calculating the geometric mean: {str(e)}.'
+            error_logger.log(level=4, msg=f'The following error occured while calculating '
+                                         f'the geometric mean: {str(e)}.')
+            raise Exception(f'The following error occured while calculating the geometric mean: {str(e)}.')
+
+        return geo_mean
 
 if __name__ == '__main__':
     sm = SuperSimpleStockMarket()

@@ -4,6 +4,8 @@ stock dividend data and stock transactions data.
 '''
 from typing import Union
 from pandas import Timestamp
+from src.utils.logger import error_logger
+
 import pandas as pd
 import numpy as np
 
@@ -46,16 +48,16 @@ class StocksData:
         })
 
     def record_trade(self, timestamp: Timestamp, stock: str, quantity: int,
-                     indicator: str, price: float) -> Union[None, str]:
+                     indicator: str, price: float) -> None:
         '''
-        This function records stock transactions.
-        :param timestamp:
-        :param stock:
-        :param quantity:
-        :param indicator:
-        :param price:
-        :return:
-        '''
+       This function records stock transactions.
+       :param timestamp:
+       :param stock:
+       :param quantity:
+       :param indicator:
+       :param price:
+       :return:
+       '''
         try:
             new_record = pd.DataFrame({
                 'timestamp': [timestamp],
@@ -68,11 +70,19 @@ class StocksData:
             StocksData.stock_transactions = pd.concat([cleaned_transactions, new_record],
                                                       ignore_index=True)
         except TypeError:
-            return f'Invalid input data types ' \
+            error_logger.log(level=4, msg=f'Invalid input data types ' \
                    f'timestamp type: {type(timestamp)} expected: {Timestamp}' \
                    f'stock type: {type(stock)} expected: {str}' \
                    f'price type: {type(price)} expected: {float}' \
                    f'quantity type: {type(quantity)} expected {int}' \
-                   f'indicator type: {type(indicator)} expected {str}'
+                   f'indicator type: {type(indicator)} expected {str}')
+            raise TypeError(f'Invalid input data types ' \
+                   f'timestamp type: {type(timestamp)} expected: {Timestamp}' \
+                   f'stock type: {type(stock)} expected: {str}' \
+                   f'price type: {type(price)} expected: {float}' \
+                   f'quantity type: {type(quantity)} expected {int}' \
+                   f'indicator type: {type(indicator)} expected {str}')
         except Exception as e:
-            return f'An error occured while processing stock: {stock}: {str(e)}'
+            error_logger.log(level=4, msg=f'An error occured while '
+                                          f'processing stock: {stock}: {str(e)}')
+            raise Exception(f'An error occured while processing stock: {stock}: {str(e)}')
