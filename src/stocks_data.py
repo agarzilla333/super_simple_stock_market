@@ -2,7 +2,6 @@
 This module has the class StocksData which creates a singleton to access
 stock dividend data and stock transactions data.
 '''
-from typing import Union
 from pandas import Timestamp
 from src.utils.logger import error_logger
 
